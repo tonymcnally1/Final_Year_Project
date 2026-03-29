@@ -148,9 +148,9 @@ while True:
     rec_time=start_rec_time-time.perf_counter()
     if tR:
         if tb_flag:
-        	if rec_time>3:
-    	    	binstring=tU.tesseract_on_image(frame,detections)
-    	    	start_rec_time=time.perf_counter()
+            if rec_time>3:
+                binstring=tU.tesseract_on_image(frame,detections)
+                start_rec_time=time.perf_counter()
         cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
     # Display
     cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
