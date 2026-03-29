@@ -1,0 +1,93 @@
+description: Ultralytics YOLO11n model trained on /content/data.yaml
+author: Ultralytics
+date: '2026-03-26T18:24:15.703032'
+version: 8.4.30
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: text_blob
+  1: person
+  2: traffic light
+  3: fire hydrant
+  4: bench
+  5: bird
+  6: cat
+  7: dog
+  8: horse
+  9: bicycle
+  10: sheep
+  11: cow
+  12: elephant
+  13: zebra
+  14: giraffe
+  15: backpack
+  16: umbrella
+  17: car
+  18: handbag
+  19: tie
+  20: suitcase
+  21: frisbee
+  22: skis
+  23: sports ball
+  24: kite
+  25: baseball bat
+  26: motorcycle
+  27: baseball glove
+  28: skateboard
+  29: surfboard
+  30: tennis racket
+  31: bottle
+  32: wine glass
+  33: cup
+  34: fork
+  35: knife
+  36: airplane
+  37: spoon
+  38: bowl
+  39: banana
+  40: apple
+  41: sandwich
+  42: orange
+  43: broccoli
+  44: carrot
+  45: hot dog
+  46: pizza
+  47: bus
+  48: donut
+  49: cake
+  50: chair
+  51: couch
+  52: potted plant
+  53: bed
+  54: dining table
+  55: train
+  56: toilet
+  57: tv
+  58: laptop
+  59: mouse
+  60: remote
+  61: keyboard
+  62: cell phone
+  63: oven
+  64: truck
+  65: sink
+  66: refrigerator
+  67: book
+  68: clock
+  69: vase
+  70: teddy bear
+  71: boat
+args:
+  batch: 1
+  fraction: 1.0
+  half: false
+  int8: false
+  nms: false
+channels: 3
+end2end: false

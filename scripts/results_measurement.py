@@ -20,19 +20,29 @@ def match_bboxes(inf_arr,gt_arr):
     cxyI=inf_arr[:,1:3]
     cxyA=gt_arr[:,1:3]
     match_list=[]
+    zeroflag=False
+    if inf_arr.shape[0]==0:
+        zeroflag=True
+        for i in range(cxyA.shape[0]):
+            cBB=gt_arr[i,:]
+            match_list.append((cBB,np.zeros((5)),"inf",i,"-"))
+        return match_list
+        
     for i in range(cxyA.shape[0]):
         minD=100
-        nearest=inf_arr[0,:]
-        cBB=gt_arr[i,:]
-        jtag=0
-        for j in range(cxyI.shape[0]):
-            if inf_arr[j,0]==0:
-                dist=calculate_distance((cxyA[i,0],cxyA[i,1]),(cxyI[j,0],cxyI[j,1]))
-                if dist<minD:
-                    minD=dist
-                    nearest=inf_arr[j,:]
-                    jtag=j
-        match_list.append((cBB,nearest,minD,i,jtag))
+        if inf_arr.shape[0]!=0:
+            nearest=inf_arr[0,:]
+            cBB=gt_arr[i,:]
+            jtag=0
+            for j in range(cxyI.shape[0]):
+                if inf_arr[j,0]==0:
+                    dist=calculate_distance((cxyA[i,0],cxyA[i,1]),(cxyI[j,0],cxyI[j,1]))
+                    if dist<minD:
+                        minD=dist
+                        nearest=inf_arr[j,:]
+                        jtag=j
+            match_list.append((cBB,nearest,minD,i,jtag))
+            
     drop_list=[]
     for i in range(len(match_list)):
         for j in range(len(match_list)):
@@ -80,6 +90,8 @@ def iou(a1,a2):
         overlap=(oLB[0]-oLT[0])*(oLB[1]-oLT[1])
         union=area1+area2-overlap
         iou=overlap/union
+        if 0>iou:
+            iou=0
         return iou
     else:
         return 0
@@ -109,21 +121,38 @@ def generate_recall_array(N,prec_array):
         rARR[i]=cval
         cval+=delta
     return rARR
+
+def generate_recall(a1,a2):
+    area1=(a1[2]-a1[0])*(a1[3]-a1[1])
+    area2=(a2[2]-a2[0])*(a2[3]-a2[1])
+    if is_overlap((a1[0],a1[1]),(a2[0],a2[1]),(a1[2],a1[3]),(a2[2],a2[3])):
+        oLT, oLB=overlap_bounds((a1[0],a1[1]),(a2[0],a2[1]),(a1[2],a1[3]),(a2[2],a2[3]))
+        overlap=(oLB[0]-oLT[0])*(oLB[1]-oLT[1])
+        r=overlap/union
+        if 0>r:
+            r=0
+        return iou
+    else:
+        return r
+    
+    
         
 if __name__=="__main__":
-    results_dir="Inference_results\ICDAR_2013_Text\model25thfeb\labels\\"
+    target_dir="Inference_results\ICDAR_2013_Text\yolo26s_coco\\"
+    results_dir=target_dir+"labels\\"
     values_dir="Modified_Datasets\ICDAR_2013_text_reading\Val\labels\\"
     img_dir="Modified_Datasets\ICDAR_2013_text_reading\Val\images\\"
-    targ_img_list=["img_190","img_23","img_80","img_126","img_155"]
     rdL=os.listdir(results_dir)
     vdL=os.listdir(values_dir)
     idL=os.listdir(img_dir)
-    for i in range(5):
-        r=random.randint(0,len(rdL)-1)
-        targ_img=rdL[r].split(".")[0]
-        targ_img=targ_img_list[i]
+
+    IOU_LIST=np.array([])
+    for i in range(len(rdL)):
+
+        targ_img=rdL[i].split(".")[0]
         infr_res_arr=file_to_array(results_dir+targ_img+".txt")
         actual_results=file_to_array(values_dir+targ_img+".txt")
+        print(i)
         mLIST=match_bboxes(infr_res_arr,actual_results)
         iou_list=np.array([])
         img=cv2.imread(img_dir+targ_img+".jpg")
@@ -139,18 +168,14 @@ if __name__=="__main__":
             a2=[v1a2[0],v1a2[1],v2a2[0],v2a2[1]]
             IOU=iou(a1,a2)
             iou_list=np.append(iou_list,IOU)
-        print("============================================================")
-        print(f"{'Target Image: ':>30}{targ_img:<30}")
-        print("============================================================")
-        print(f"{'GT idx':<8} {'Inf idx':<9} {'IoU':>8}")
-        print("------------------------------------------------------------")
-        for i in range(len(iou_list)):
-            print(f"{mLIST[i][3]:<8} {mLIST[i][4]:<9} {iou_list[i]:>8.4f}")
-        print("============================================================")
         
+        IOU_LIST=np.append(IOU_LIST,iou_list)
         
-        
-        
+    IOU_LIST=np.sort(IOU_LIST)
+    IOU_LIST=np.flip(IOU_LIST)
+    recall_array=generate_recall_array(IOU_LIST.shape[0],IOU_LIST)
+    results=np.vstack((IOU_LIST,recall_array))
+    np.savetxt(target_dir+"results2.csv",results,delimiter=',')
         
 
 
