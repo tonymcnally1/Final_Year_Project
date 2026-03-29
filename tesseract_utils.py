@@ -41,6 +41,8 @@ def swap_ones_zeros(img):
 def big_image_infr(xyxy,bwimg):
     a=np.ones(bwimg.shape,dtype=np.uint8)
     for i in range(xyxy.shape[0]):
+        if xyxy[i,0]!=0:
+            continue
         xtl,ytl,xbr,ybr= xyxy[i,0],xyxy[i,1],xyxy[i,2],xyxy[i,3]
         pict=bwimg[ytl:ybr,xtl:xbr]
         thres=ski.filters.threshold_otsu(pict)
