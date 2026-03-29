@@ -116,6 +116,7 @@ while True:
     detections = results[0].boxes
 
     # Go through each detection and get bbox coords, confidence, and class
+    tb_flag=0
     for i in range(len(detections)):
 
         # Get bounding box coordinates
@@ -126,6 +127,8 @@ while True:
 
         # Get bounding box class ID and name
         classidx = int(detections[i].cls.item())
+        if (classidx ==0):
+        	tb_flag=True
         classname = labels[classidx]
 
         # Get bounding box confidence
@@ -144,10 +147,10 @@ while True:
     
     rec_time=start_rec_time-time.perf_counter()
     if tR:
-        
-        if classidx==0 & rec_time>3:
-    	    binstring=tU.tesseract_on_image(frame,detections)
-    	    start_rec_time=time.perf_counter()
+        if tb_flag:
+        	if rec_time>3:
+    	    	binstring=tU.tesseract_on_image(frame,detections)
+    	    	start_rec_time=time.perf_counter()
         cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
     # Display
     cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
