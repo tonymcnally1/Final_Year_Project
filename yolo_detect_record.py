@@ -5,8 +5,6 @@ import time
 
 import cv2
 import numpy as np
-import pdb
-import tesseract_utils as tU
 from ultralytics import YOLO
 
 # Define and parse user input arguments
@@ -20,10 +18,8 @@ parser.add_argument('--source', help='Image source, can be image file ("test.jpg
 parser.add_argument('--resolution', help='Resolution in WxH to display inference results at (example: "640x480"), \
                     otherwise, match source resolution',
                     default=None)
-parser.add_argument('--rec_log_csv',help='Log recording csv file: argument is relative path to log `',default="")
 parser.add_argument('--record', help='Record results from video or webcam and save it as "demo1.avi". Must specify --resolution argument to record.',
                     action='store_true')
-parser.add_argument('--text_recognition', help='Recognise text using Tesseract' ,action='store_true')
 
 args = parser.parse_args()
 
@@ -33,8 +29,6 @@ model_path = args.model
 img_source = args.source
 user_res = args.resolution
 record = args.record
-rec_log_csv= args.rec_log_csv
-tR= args.text_recognition
 
 # Check if model file exists and is valid
 if (not os.path.exists(model_path)):
@@ -64,7 +58,7 @@ if user_res:
 
 # Check if recording is valid and set up recording
 if record:
-    if source_type != 'usb':
+    if source_type not in ['video','usb']:
         print('Recording only works for video and camera sources. Please try again.')
         sys.exit(0)
     if not user_res:
@@ -98,7 +92,6 @@ img_count = 0
 min_thresh=0.45
 
 # Begin inference loop
-start_rec_time=time.perf_counter()
 while True:
 
     t_start = time.perf_counter()
@@ -111,9 +104,11 @@ while True:
     if resize == True:
         frame = cv2.resize(frame,(resW,resH))
 
-    
-    results = model.predict(frame,verbose=False)
+    results = model(frame, verbose=False)
     detections = results[0].boxes
+
+    # Initialize variable for basic object counting example
+    object_count = 0
 
     # Go through each detection and get bbox coords, confidence, and class
     for i in range(len(detections)):
@@ -132,27 +127,28 @@ while True:
         conf = detections[i].conf.item()
 
         # Draw box if confidence threshold is high enough
-	if conf > min_thresh:
-		color = bbox_colors[classidx % 10]
-            	cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), color, 2)
+        if conf > min_thresh:
 
-            	label = f'{classname}: {int(conf*100)}%'
-            	labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1) # Get font size
-            	label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            	cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), color, cv2.FILLED) # Draw white box to put label text in
-            	cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1) # Draw label text
-    
-	rec_time=start_rec_time-time.perf_counter()
-	if tR:
-		if classidx==0 & rec_time>3:
-    			binstring=tU.tesseract_on_image(frame,detections)
-   			start_rec_time=time.perf_counter()
-   		cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
+            color = bbox_colors[classidx % 10]
+            cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), color, 2)
+
+            label = f'{classname}: {int(conf*100)}%'
+            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1) # Get font size
+            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+            cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), color, cv2.FILLED) # Draw white box to put label text in
+            cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1) # Draw label text
+
+
     # Display
     cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     cv2.imshow('YOLO detection results',frame) # Display image
- 
-    key = cv2.waitKey(1)
+    if record: recorder.write(frame)
+
+    # If inferencing on individual images, wait for user keypress before moving to next image. Otherwise, wait 5ms before moving to next frame.
+    if source_type == 'image' or source_type == 'folder':
+        key = cv2.waitKey()
+    elif source_type == 'video' or source_type == 'usb' or source_type == 'picamera':
+        key = cv2.waitKey(1)
     
     if key == ord('q') or key == ord('Q'): # Press 'q' to quit
         break
@@ -178,10 +174,9 @@ while True:
 
 # Clean up
 print(f'Average pipeline FPS: {avg_frame_rate:.2f}')
-if rec_log_csv:
-	with open(rec_log_csv,"a") as f:
-		f.write(model_path+","+f"{avg_frame_rate:.2f}\n")
-			
-	
-cap.release()
+if source_type == 'video' or source_type == 'usb':
+    cap.release()
+elif source_type == 'picamera':
+    cap.stop()
+if record: recorder.release()
 cv2.destroyAllWindows()
