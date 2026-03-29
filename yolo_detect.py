@@ -132,22 +132,23 @@ while True:
         conf = detections[i].conf.item()
 
         # Draw box if confidence threshold is high enough
-	if conf > min_thresh:
-		color = bbox_colors[classidx % 10]
-            	cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), color, 2)
+        if conf > min_thresh:
+            color = bbox_colors[classidx % 10]
+            cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), color, 2)
 
-            	label = f'{classname}: {int(conf*100)}%'
-            	labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1) # Get font size
-            	label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            	cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), color, cv2.FILLED) # Draw white box to put label text in
-            	cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1) # Draw label text
+            label = f'{classname}: {int(conf*100)}%'
+            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1) # Get font size
+            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+            cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), color, cv2.FILLED) # Draw white box to put label text in
+            cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1) # Draw label text
     
-	rec_time=start_rec_time-time.perf_counter()
-	if tR:
-		if classidx==0 & rec_time>3:
-    			binstring=tU.tesseract_on_image(frame,detections)
-   			start_rec_time=time.perf_counter()
-   		cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
+    rec_time=start_rec_time-time.perf_counter()
+    if tR:
+        
+        if classidx==0 & rec_time>3:
+    	    binstring=tU.tesseract_on_image(frame,detections)
+    	    start_rec_time=time.perf_counter()
+        cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
     # Display
     cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     cv2.imshow('YOLO detection results',frame) # Display image
