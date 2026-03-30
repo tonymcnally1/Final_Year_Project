@@ -2,10 +2,8 @@ import os
 import sys
 import argparse
 import time
-
 import cv2
 import numpy as np
-import pdb
 import tesseract_utils as tU
 from ultralytics import YOLO
 
@@ -96,6 +94,7 @@ frame_rate_buffer = []
 fps_avg_len = 200
 img_count = 0
 min_thresh=0.45
+binstring=""
 
 # Begin inference loop
 start_rec_time=time.perf_counter()
@@ -114,21 +113,22 @@ while True:
     
     results = model.predict(frame,verbose=False)
     detections = results[0].boxes
-
     # Go through each detection and get bbox coords, confidence, and class
-    tb_flag=0
+    tb_flag=False
+    i_list=[]
     for i in range(len(detections)):
 
         # Get bounding box coordinates
         # Ultralytics returns results in Tensor format, which have to be converted to a regular Python array
-        xyxy_tensor = detections[i].xyxy.cpu() # Detections in Tensor format in CPU memory
+        xyxy_tensor = detections[i].xyxy.cpu()
         xyxy = xyxy_tensor.numpy().squeeze() # Convert tensors to Numpy array
         xmin, ymin, xmax, ymax = xyxy.astype(int) # Extract individual coordinates and convert to int
 
         # Get bounding box class ID and name
         classidx = int(detections[i].cls.item())
-        if (classidx ==0):
+        if classidx ==0:
         	tb_flag=True
+        	i_list.append(i)
         classname = labels[classidx]
 
         # Get bounding box confidence
@@ -145,17 +145,20 @@ while True:
             cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), color, cv2.FILLED) # Draw white box to put label text in
             cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1) # Draw label text
     
-    rec_time=start_rec_time-time.perf_counter()
+    rec_time=time.perf_counter()-start_rec_time
     if tR:
         if tb_flag:
             if rec_time>3:
-                binstring=tU.tesseract_on_image(frame,detections)
+                ret1, frame1 = cap.read()
+                binstring=tU.tesseract_on_image(frame1,detections,i_list)
                 start_rec_time=time.perf_counter()
+                
         cv2.putText(frame,f'Tesseract OCR: ={binstring}',(10,40),cv2.FONT_HERSHEY_SIMPLEX, .7,(0,255,255),2)
     # Display
     cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10,20), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,255,255), 2) # Draw framerate
     cv2.imshow('YOLO detection results',frame) # Display image
- 
+    if record:
+        recorder.write(frame)
     key = cv2.waitKey(1)
     
     if key == ord('q') or key == ord('Q'): # Press 'q' to quit
@@ -185,7 +188,7 @@ print(f'Average pipeline FPS: {avg_frame_rate:.2f}')
 if rec_log_csv:
 	with open(rec_log_csv,"a") as f:
 		f.write(model_path+","+f"{avg_frame_rate:.2f}\n")
-			
-	
+if record:
+    recorder.release()
 cap.release()
 cv2.destroyAllWindows()

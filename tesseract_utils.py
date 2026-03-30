@@ -38,10 +38,10 @@ def swap_ones_zeros(img):
     newimg=newimg.astype(np.uint8)
     return newimg
 
-def big_image_infr(xyxy,bwimg):
+def big_image_infr(xyxy,bwimg,ilist):
     a=np.ones(bwimg.shape,dtype=np.uint8)
     for i in range(xyxy.shape[0]):
-        if xyxy[i,0]!=0:
+        if i not in ilist:
             continue
         xtl,ytl,xbr,ybr= xyxy[i,0],xyxy[i,1],xyxy[i,2],xyxy[i,3]
         pict=bwimg[ytl:ybr,xtl:xbr]
@@ -51,10 +51,11 @@ def big_image_infr(xyxy,bwimg):
         a[ytl:ybr,xtl:xbr]=binImg
     return a
 
-def  tesseract_on_image(frame,resultsOBJ):
+def  tesseract_on_image(frame,resultsboxOBJ,ilist):
     sep=" "
     img_gray=cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY).squeeze()
-    xyxy=resultsOBJ.boxes.xyxy.numpy().astype(int)
-    a=big_image_infr(xyxy,img_gray)
+    
+    xyxy=resultsboxOBJ.xyxy.numpy().astype(int)
+    a=big_image_infr(xyxy,img_gray,ilist)
     binstring=sep.join(pts.image_to_string(a).split("\n"))
     return binstring
