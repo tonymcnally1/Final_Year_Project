@@ -1,6 +1,6 @@
-**ReadMe added after submission deadline for demonstartion purposes.
+*ReadMe added after submission deadline for demonstartion purposes.*
 
-#How to run python image and text detection?
+# How to run python image and text detection?
 1.Install tesseract binaries and add to Path
 2.Set up and run python virtual enviorment 
 3.Install relevant python libraries
